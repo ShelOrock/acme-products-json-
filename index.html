@@ -36,6 +36,7 @@ input, button{
         async componentDidMount(){
           this.setState({ products: ( await axios.get('/api/products')).data});
         }
+
         render(){
           const { products, name, error, price } = this.state;
           return (
@@ -43,14 +44,39 @@ input, button{
               <h1>Acme Products</h1>
               { error && <div className='error'>{ error }</div> }
               <div className='form'>
-                <input placeholder='Product Name' value={ name } onChange={ ev => this.setState({ name: ev.target.value })}/>
-                <input value={ price } placeholder='Product Price' onChange={ ev => this.setState({ price: ev.target.value })}/>
-                <button onClick={()=> console.log('TODO Create')}>Create</button>
+                <input name={ "productName" } placeholder='Product Name' value={ name } onChange={ ev => this.setState({ name: ev.target.value })}/>
+                <input name={ "productPrice" } value={ price } placeholder='Product Price' onChange={ ev => this.setState({ price: ev.target.value })}/>
+                <button onClick={(e)=> {
+                  const productName = document.querySelector('input[name="productName"]')
+                  const productPrice = document.querySelector('input[name="productPrice"]')
+                  axios.post('/api/products',
+                    {
+                      id: products.slice(-1)[0] + 1,
+                      name: productName.value,
+                      productPrice: productPrice.value,
+                    }
+                  )
+                  .then(() => {
+                    axios.get('api/products')
+                    .then(res => this.setState({products: res.data}) )
+
+                  })
+
+                }}>Create</button>
               </div>
               <ul>
                 {
-                  products.map( product => <li onClick={()=> console.log('TO DO Destroy')} key={ product.id }>
+                  products.map( product => <li 
+                    onClick={ (e) =>  {
+                      axios.delete(`/api/products/${product.id}`, product)
+                      .then(() => {
+                        axios.get('/api/products')
+                        .then(res => this.setState({products: res.data, name: '', price: ''}) )   
+                      })
+                    }}
+                    key={ product.id }>
                     <div>{ product.name }</div>
+                    <div>{ `$${product.productPrice}.00` }</div>
                   </li>)
                 }
               </ul>
